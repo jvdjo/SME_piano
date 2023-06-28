@@ -2,8 +2,8 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-const char* ssid = "SmeTeste";
-const char* password = "npaz5072";
+const char* ssid = "ARTHUR_2.4";
+const char* password = "R81a83MV";
 
 short frequencies[8][7] = {
   {33, 37, 41, 43, 49, 55, 61}, // oitava 1     Inaudível
@@ -42,8 +42,18 @@ int A7Treshold = set_ldr_treshold(35);
 int A4Treshold = set_ldr_treshold(32);
 int A5Treshold = set_ldr_treshold(33);
 
+int sensorValueA0 = 0;
+int sensorValueA3 = 0;
+int sensorValueA6 = 0;
+int sensorValueA7 = 0;
+int sensorValueA4 = 0;
+int sensorValueA5 = 0;
+
+int flag = 35;
+int flag_geral = 0;
+
 char buzzer = 5; //insira o pin do digital output aqui
-char noteDuration = 8;//insira duração da nota
+char noteDuration = 50;//insira duração da nota
 
 //ledc, estava causando erros estranhos se eu n setasse
 int freq = 2000;
@@ -85,54 +95,90 @@ void loop() {
 
 void makeSound(void * parameter){
   while(true){
-    int sensorValueA0 = analogRead(36);
+    flag_geral = 0;
+    sensorValueA0 = analogRead(36);
     //Serial.println(sensorValueA0);
     if (sensorValueA0 >= A0Treshold){
-      //Serial.println("A0");
-      tone(buzzer, C, noteDuration);
+      Serial.println("A0");
+      if (flag != 0){
+        noTone(buzzer);
+        tone(buzzer, A);
+      }
+      flag = 0;
     }else{
-      noTone(buzzer);
+      flag_geral += 1;
+      //noTone(buzzer);
     };
 
-    int sensorValueA3 = analogRead(39);
+    sensorValueA3 = analogRead(39);
     if (sensorValueA3 >= A3Treshold){
-      //Serial.println("A3");
-      tone(buzzer, D, noteDuration);
+      Serial.println("A3");
+      if (flag != 3){
+        noTone(buzzer);
+        tone(buzzer, G);
+      }
+      flag = 3;
     }else{
-      noTone(buzzer);
+      flag_geral += 1;
+      //noTone(buzzer);
     };
 
-    int sensorValueA6 = analogRead(34);
+    sensorValueA6 = analogRead(34);
     if (sensorValueA6 >= A6Treshold){
-      //Serial.println("A6");
-      tone(buzzer, E, noteDuration);
+      Serial.println("A6");
+      if (flag != 6){
+        noTone(buzzer);
+        tone(buzzer, F);
+      }
+      flag = 6;
     }else{
-      noTone(buzzer);
+      flag_geral += 1;
+      //noTone(buzzer);
     };
 
-    int sensorValueA7 = analogRead(35);
+    sensorValueA7 = analogRead(35);
     if (sensorValueA7 >= A7Treshold){
-      //Serial.println("A7");
-      tone(buzzer, F, noteDuration);
+      Serial.println("A7");
+      if (flag != 7){
+        noTone(buzzer);
+        tone(buzzer, E);
+      }
+      flag = 7;
     }else{
-      noTone(buzzer);
+      flag_geral += 1;
+      //noTone(buzzer);
     };
 
-    int sensorValueA4 = analogRead(32);
+    sensorValueA4 = analogRead(32);
     if (sensorValueA4 >= A4Treshold){
-      //Serial.println("A4");
-      tone(buzzer, G, noteDuration);
+      Serial.println("A4");
+      if (flag != 4){
+        noTone(buzzer);
+        tone(buzzer, D);
+      }
+      flag = 4;
     }else{
-      noTone(buzzer);
+      flag_geral += 1;
+      //noTone(buzzer);
     };
 
-    int sensorValueA5 = analogRead(33);
+    sensorValueA5 = analogRead(33);
     if (sensorValueA5 >= A5Treshold){
-      //Serial.println("A5");
-      tone(buzzer, A, noteDuration);
+      Serial.println("A5");
+      if (flag != 5){
+        noTone(buzzer);
+        tone(buzzer, C);
+      }
+      flag = 5;
     }else{
-      noTone(buzzer);
+      flag_geral += 1;
+      //noTone(buzzer);
     };
+    delay(noteDuration);
+    if (flag_geral == 6){
+      flag = 35;
+      noTone(buzzer);
+    }
   }
 }
 
@@ -145,31 +191,38 @@ void make_get_request(void * parameter){
       //Serial.println("Connecting to WiFi..");
     }
     Serial.println("Connection succeeded!!!!");
-    if ((WiFi.status() == WL_CONNECTED)) {
-      HTTPClient http;
+    while(true){
+      if ((WiFi.status() == WL_CONNECTED)) {
+        HTTPClient http;
 
-      http.begin("https://sme-integracao.azurewebsites.net/frequencia");
-      int httpCode = http.GET();
-      StaticJsonDocument<200> doc;
+        http.begin("https://sme-integracao.azurewebsites.net/frequencia");
+        int httpCode = http.GET();
+        StaticJsonDocument<200> doc;
 
-      if (httpCode > 0) {
-        String payload = http.getString();
-        Serial.println(httpCode);
-        Serial.println(payload);
-        DeserializationError erro = deserializeJson(doc, payload);
+        if (httpCode > 0) {
+          String payload = http.getString();
+          Serial.println(httpCode);
+          Serial.println(payload);
+          DeserializationError erro = deserializeJson(doc, payload);
 
-        int frequencia = doc["frequenciaNota"];
-        Serial.println(frequencia);
+          int frequencia = doc["frequenciaNota"];
+          Serial.println(frequencia);
 
-        //int lower_index = payload.indexOf("Nota\"") + 5; //61
-        //payload.substring(lower_index, lower_index+1);
-        //Serial.println(lower_index);
-        switch_frequency(frequencia);
+          switch_frequency(frequencia);
+        }
+        else {
+          //Serial.println("Error on HTTP request");
+        }
+        http.end();
       }
-      else {
-        //Serial.println("Error on HTTP request");
+      else{
+        WiFi.begin(ssid, password);
+        while(WiFi.status() != WL_CONNECTED){
+          delay(1000);
+          //Serial.println("Connecting to WiFi..");
+        }
+        Serial.println("Connection succeeded!!!!");
       }
-      http.end();
     }
     //Serial.println("WIFI DISCONNECTED");
     WiFi.disconnect();
