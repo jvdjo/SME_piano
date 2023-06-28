@@ -2,8 +2,8 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
-const char* ssid = "ARTHUR_2.4";
-const char* password = "R81a83MV";
+const char* ssid = "SmeTeste";
+const char* password = "npaz5072";
 
 short frequencies[8][7] = {
   {33, 37, 41, 43, 49, 55, 61}, // oitava 1     Inaudível
